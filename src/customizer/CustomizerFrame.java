@@ -20,6 +20,7 @@
 package customizer;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -38,17 +39,30 @@ public class CustomizerFrame extends JFrame implements ActionListener {
         setSize(400, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+        this.setLocation(dim.width/2-this.getSize().width/2, dim.height/2-this.getSize().height/2);
+
         setVisible(true);
 
         IO.loadOrCreatePropertiesFile();
+        if (IO.getTimesWarned() < 3)
+            if (warnUser() == 0)
+                return;
         if (!IO.hasDirectoryAndLocale())
             queryForDirectory(true);
     }
 
     protected void queryForDirectory(boolean showInstructions) {
 
-        if (showInstructions) {
-            JOptionPane.showMessageDialog(this, "Please select the Hearthstone folder.");
+        //instruct the user that they need to find the hearthstone install folder
+        Object[] options = { "OK", "Exit" };
+        int intention = JOptionPane.showOptionDialog(this, "Please select the Hearthstone folder.", "",
+                JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
+        if (intention != 0) {
+            //user is easily intimidated by demands.
+            setVisible(false);
+            dispose();
+            return;
         }
 
         //let the user tell us where Hearthstone is installed.
@@ -99,6 +113,25 @@ public class CustomizerFrame extends JFrame implements ActionListener {
 
 
 
+    }
+
+
+    /** Warns the user not to use this software, as it could ruin their computer. */
+    private int warnUser() {
+        Object[] options = {"I understand", "Close"};
+        int result = JOptionPane.showOptionDialog(this, "This is alpha software that could ruin your Hearthstone install,\nor your entire computer. " +
+                "Please take the necessary precautions.", "WARNING", JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+        //make sure they pressed "I understand", not just x
+        if (result == 0) {
+            //they clicked I understand... increment timesWarned
+            IO.incTimesWarned();
+            return 1;
+        } else {
+            //user is a chicken, abort
+            setVisible(false);
+            dispose();
+        }
+        return 0;
     }
 
     @Override

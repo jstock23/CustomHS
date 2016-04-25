@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.StringTokenizer;
 
 /**
  * Created by Jason Stockwell on 4/24/16.
@@ -67,6 +68,10 @@ public class IO {
     };
     /** The location of the properties file which will store info like Hearthstone directory */
     private static String propertiesFileLocation;
+    /** The number of times the user has been warned that this could screw up their whole computer... */
+    private static int timesWarned = 0;
+    /** Text used in properties.txt file to indicate number of times the user was warned not to use this software. */
+    private final static String WARNING_TEXT = "Number of times the user has been warned: ";
 
 
 
@@ -217,23 +222,25 @@ public class IO {
         String contents = loadTextFile(propertiesFileLocation);
         if (contents.equals("") || contents == null)
             return 0;
+        StringTokenizer tokenizer = new StringTokenizer(contents, "\n");
         System.out.println("Contents of properties file:\n\n\"" + contents + "\"");
         //ok, lets extract the info
-        textFilesDirectoryString = contents.substring(0, contents.indexOf('\n'));
-        //does it seem to check out a little bit?
-        if (textFilesDirectoryString.contains("Hearthstone")) {
-            System.out.println("Loaded directory of text files: \"" + textFilesDirectoryString + "\"");
-            //ok so now load the locale
-            String localeSection = contents.substring(contents.indexOf('\n'));
-            for (int j = 0; j < LOCALES.length; j++) {
-                if (localeSection.contains(LOCALES[j])) {
-                    locale = j;
-                    System.out.println("Loaded locale: " + LOCALES[j]);
-                    return 1;
-                }
+        textFilesDirectoryString = tokenizer.nextToken();
+        System.out.println("Loaded directory of text files: \"" + textFilesDirectoryString + "\"");
+        //ok so now load the locale
+        String localeSection = tokenizer.nextToken();
+        for (int j = 0; j < LOCALES.length; j++) {
+            if (localeSection.contains(LOCALES[j])) {
+                locale = j;
+                System.out.println("Loaded locale: " + LOCALES[j]);
+                break;
             }
-            System.out.println("Error: Could not load valid locale...");
         }
+        if (locale == -1)
+            System.out.println("Error: Could not load valid locale...");
+        //now check the number of times the user has been warned not to use this software
+        timesWarned = Integer.parseInt(tokenizer.nextToken().substring(WARNING_TEXT.length()));
+        System.out.println("User has been warned " + timesWarned + " times.");
         return 0;
     }
 
@@ -244,13 +251,35 @@ public class IO {
             System.out.println("Can't save properties because there is no known place to save them to... Please inform us of this error.");
             return 0;
         }
-        return save(textFilesDirectoryString + "\n" + LOCALES[locale], propertiesFileLocation);
+        StringBuilder builder = new StringBuilder();
+        if (textFilesDirectoryString == null || textFilesDirectoryString.equals(""))
+            builder.append(" \n");
+        else
+            builder.append(textFilesDirectoryString).append('\n');
+        if (locale == -1)
+            builder.append("No locale set\n");
+        else
+            builder.append(LOCALES[locale]).append('\n');
+        builder.append(WARNING_TEXT).append(timesWarned);
+        return save(builder.toString(), propertiesFileLocation);
     }
 
     /** Returns true if there is a locale and text file directory */
     protected static boolean hasDirectoryAndLocale() {
         return textFilesDirectoryString != null && locale != -1;
     }
+
+    /** Returns the number of times the user has been warned not to use this software */
+    protected static int getTimesWarned() {
+        return timesWarned;
+    }
+
+    /** Increments the number of times warned by 1 */
+    protected static void incTimesWarned() {
+        timesWarned++;
+        savePropertiesToFile();
+    }
+
 }
 
 
