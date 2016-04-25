@@ -40,12 +40,16 @@ public class CustomizerFrame extends JFrame implements ActionListener {
 
         setVisible(true);
 
-        queryForDirectory(true);
+        IO.loadOrCreatePropertiesFile();
+        if (!IO.hasDirectoryAndLocale())
+            queryForDirectory(true);
     }
 
     protected void queryForDirectory(boolean showInstructions) {
 
-        if (showInstructions) JOptionPane.showMessageDialog(this, "Please select the Hearthstone folder.");
+        if (showInstructions) {
+            JOptionPane.showMessageDialog(this, "Please select the Hearthstone folder.");
+        }
 
         //let the user tell us where Hearthstone is installed.
         JFileChooser chooser = new JFileChooser();
@@ -74,7 +78,9 @@ public class CustomizerFrame extends JFrame implements ActionListener {
                 invalidDirectory("It looks like you chose a folder called \"" + folderName + "\". Please select the \"Hearthstone\" folder.");
             }
         } else {
-            //
+            //user didn't select anything, so close
+            setVisible(false);
+            dispose();
         }
     }
 
